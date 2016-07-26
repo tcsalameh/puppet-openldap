@@ -34,10 +34,26 @@ class openldap::server (
   $package_name              = $::openldap::params::server_package_name,
   $pid_file                  = $::openldap::params::pid_file,
   $ppolicy                   = false,
-  $ppolicy_default           = undef,
   $pp_hash_cleartext         = undef,
   $pp_use_lockout            = undef,
   $pp_forward_updates        = undef,
+  $pwd_attr                  = undef,
+  $pwd_min_age               = undef,
+  $pwd_max_age               = undef,
+  $pwd_in_history            = undef,
+  $pwd_check_quality         = undef,
+  $pwd_min_length            = undef,
+  $pwd_expire_warning        = undef,
+  $pwd_grace_auth_nlimit     = undef,
+  $pwd_lockout               = undef,
+  $pwd_lockout_duration      = undef,
+  $pwd_max_failure           = undef,
+  $pwd_fail_count_interval   = undef,
+  $pwd_must_change           = undef,
+  $pwd_allow_user_change     = undef,
+  $pwd_safe_modify           = undef,
+  $pwd_max_total_attempts    = undef,
+  $pwd_check_module          = undef,
   $replica_dn                = undef,
   $schema_dir                = $::openldap::params::schema_dir,
   $security                  = undef,
@@ -121,10 +137,59 @@ class openldap::server (
   validate_string($package_name)
   validate_absolute_path($pid_file)
   if $ppolicy {
-    validate_string($ppolicy_default)
     validate_re($pp_hash_cleartext, '^TRUE$|^FALSE$')
     validate_re($pp_use_lockout, '^TRUE$|^FALSE$')
     validate_re($pp_forward_updates, '^TRUE$|^FALSE$')
+    validate_string($pwd_attr)
+  }
+  if $pwd_min_age {
+    validate_re($pwd_min_age, '\d+$')
+  }
+  if $pwd_max_age {
+    validate_re($pwd_max_age, '\d+$')
+  }
+  if $pwd_in_history {
+    validate_re($pwd_max_age, '\d+$')
+  }
+  if $pwd_check_quality {
+    validate_re($pwd_check_quality, '0|1|2')
+    if $pwd_check_quality == '1' or $pwd_check_quality == '2' {
+      validate_string($pwd_check_module)
+      $use_ppolicy_checker = true
+    }
+  }
+  if $pwd_min_length  {
+    validate_re($pwd_min_length, '\d+$')
+  }
+  if $pwd_expire_warning {
+    validate_re($pwd_min_length, '\d+$')
+  }
+  if $pwd_grace_auth_nlimit {
+    validate_re($pwd_grace_auth_nlimit, '\d+$') 
+  }
+  if $pwd_lockout {
+    validate_re($pwd_lockout, '^TRUE$|^FALSE$')
+  }
+  if $pwd_lockout_duration {
+    validate_re($pwd_lockout_duration, '\d+$')
+  }
+  if $pwd_max_failure {
+    validate_re($pwd_max_failure, '\d+$')
+  }
+  if $pwd_fail_count_interval {
+    validate_re($pwd_fail_count_interval, '\d+$')
+  }
+  if $pwd_must_change {
+    validate_re($pwd_must_change, '^TRUE$|^FALSE$')
+  }
+  if $pwd_allow_user_change {
+    validate_re($pwd_allow_user_change, '^TRUE$|^FALSE$')
+  }
+  if $pwd_safe_modify {
+    validate_re($pwd_safe_modify, '^TRUE$|^FALSE$')
+  }
+  if $pwd_max_total_attempts {
+    validate_re($pwd_max_total_attempts, '\d+$')
   }
   validate_absolute_path($schema_dir)
   if $security {

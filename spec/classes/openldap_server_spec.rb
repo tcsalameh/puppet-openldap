@@ -401,11 +401,27 @@ describe 'openldap::server' do
           let(:params) do
             super().merge(
               {
-                :ppolicy            => true,
-                :ppolicy_default    => 'cn=passwordDefault,dc=example,dc=com',
-                :pp_hash_cleartext  => 'TRUE',
-                :pp_use_lockout     => 'FALSE',
-                :pp_forward_updates => 'FALSE',
+                :ppolicy                 => true,
+                :pp_hash_cleartext       => 'TRUE',
+                :pp_use_lockout          => 'TRUE',
+                :pp_forward_updates      => 'FALSE',
+                :pwd_attr                => 'userPassword',
+                :pwd_min_age             => '3600',
+                :pwd_max_age             => '2592000',
+                :pwd_in_history          => '5',
+                :pwd_check_quality       => '2',
+                :pwd_min_length          => '8',
+                :pwd_expire_warning      => '3600',
+                :pwd_grace_auth_nlimit   => '5',
+                :pwd_lockout             => 'TRUE',
+                :pwd_lockout_duration    => '0',
+                :pwd_max_failure         => '5',
+                :pwd_fail_count_interval => '20',
+                :pwd_must_change         => 'FALSE',
+                :pwd_allow_user_change   => 'TRUE',
+                :pwd_safe_modify         => 'TRUE',
+                :pwd_max_total_attempts  => '50',
+                :pwd_check_module        => 'check_password.so',
               }
             )
           end
@@ -438,15 +454,44 @@ describe 'openldap::server' do
           ) }
           it { should contain_openldap('olcOverlay={0}ppolicy,olcDatabase={2}hdb,cn=config').with_attributes(
             {
-              'objectClass'     => [
+              'objectClass'              => [
                 'olcOverlayConfig',
                 'olcPPolicyConfig',
               ],
               'olcOverlay'               => ['ppolicy'],
               'olcPPolicyDefault'        => ['cn=passwordDefault,dc=example,dc=com'],
               'olcPPolicyHashCleartext'  => ['TRUE'],
-              'olcPPolicyUseLockout'     => ['FALSE'],
+              'olcPPolicyUseLockout'     => ['TRUE'],
               'olcPPolicyForwardUpdates' => ['FALSE'],
+            }
+          ) }
+          it { should contain_openldap('cn=passwordDefault,dc=example,dc=com').with_attributes(
+            {
+              'objectClass' => [
+                'top',
+                'person',
+                'pwdPolicy',
+                'pwdPolicyChecker',
+              ],
+              'cn'                      => ['passwordDefault'],
+              'sn'                      => ['passwordDefault'],
+              'pwdAttribute'            => ['userPassword'],
+              'pwdMinAge'               => ['3600'],
+              'pwdMaxAge'               => ['2592000'],
+              'pwdInHistory'            => ['5'],
+              'pwdCheckQuality'         => ['2'],
+              'pwdMinLength'            => ['8'],
+              'pwdExpireWarning'        => ['3600'],
+              'pwdGraceAuthNLimit'      => ['5'],
+              'pwdLockout'              => ['TRUE'],
+              'pwdLockoutDuration'      => ['0'],
+              'pwdMaxFailure'           => ['5'],
+              'pwdFailureCountInterval' => ['20'],
+              'pwdMustChange'           => ['FALSE'],
+              'pwdAllowUserChange'      => ['TRUE'],
+              'pwdSafeModify'           => ['TRUE'],
+              'pwdMaxTotalAttempts'     => ['50'],
+              'pwdCheckModule'          => ['check_password.so'],
             }
           ) }
 

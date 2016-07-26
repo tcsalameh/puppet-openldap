@@ -398,12 +398,55 @@ class openldap::server::config {
           'olcPPolicyConfig',
         ],
         'olcOverlay'               => 'ppolicy',
-        'olcPPolicyDefault'        => $::openldap::server::ppolicy_default,
+        'olcPPolicyDefault'        => "cn=passwordDefault,${::openldap::server::suffix}", # lint:ignore:80chars
         'olcPPolicyHashCleartext'  => $::openldap::server::pp_hash_cleartext,
         'olcPPolicyUseLockout'     => $::openldap::server::pp_use_lockout,
         'olcPPolicyForwardUpdates' => $::openldap::server::pp_forward_updates,
+        }),
+        require  => Openldap['cn=module{0},cn=config'],
+    }
+  }
+
+  if $::openldap::server::use_ppolicy_checker {
+    $ppolicy_objectclass = [
+      'top',
+      'person',
+      'pwdPolicy', 
+      'pwdPolicyChecker',
+    ]
+  }
+  else {
+    $ppolicy_objectclass = [
+      'top',
+      'person',
+      'pwdPolicy',
+    ]
+  }
+
+  openldap { "cn=passwordDefault,${::openldap::server::suffix}": # lint:ignore:80chars
+    ensure     => present,
+
+    attributes => delete_undef_values({
+      'objectClass'             => $ppolicy_objectclass,
+      'cn'                      => 'passwordDefault',
+      'sn'                      => 'passwordDefault',
+      'pwdAttribute'            => $::openldap::server::pwd_attr,
+      'pwdMinAge'               => $::openldap::server::pwd_min_age,
+      'pwdMaxAge'               => $::openldap::server::pwd_max_age,
+      'pwdInHistory'            => $::openldap::server::pwd_in_history,
+      'pwdCheckQuality'         => $::openldap::server::pwd_check_quality,
+      'pwdMinLength'            => $::openldap::server::pwd_min_length,
+      'pwdExpireWarning'        => $::openldap::server::pwd_expire_warning,
+      'pwdGraceAuthNLimit'      => $::openldap::server::pwd_grace_auth_nlimit,
+      'pwdLockout'              => $::openldap::server::pwd_lockout,
+      'pwdLockoutDuration'      => $::openldap::server::pwd_lockout_duration,
+      'pwdMaxFailure'           => $::openldap::server::pwd_max_failure,
+      'pwdFailureCountInterval' => $::openldap::server::pwd_fail_count_interval,
+      'pwdMustChange'           => $::openldap::server::pwd_must_change,
+      'pwdAllowUserChange'      => $::openldap::server::pwd_allow_user_change,
+      'pwdSafeModify'           => $::openldap::server::pwd_safe_modify,
+      'pwdMaxTotalAttempts'     => $::openldap::server::pwd_max_total_attempts,
+      'pwdCheckModule'          => $::openldap::server::pwd_check_module,
       }),
-      require    => Openldap['cn=module{0},cn=config']
-   }
   }
 }
