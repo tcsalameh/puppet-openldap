@@ -32,9 +32,9 @@ Puppet::Type.type(:openldap).provide(:olc) do
     @property_flush = {}
   end
 
-  def self.instances
-
-    o = slapcat '-b', 'cn=config', '-o', 'ldif-wrap=no', '-H', 'ldap:///???'
+  def self.parse_slapcat(suffix)
+    ldap_objects = {}
+    o = slapcat '-b', suffix, '-o', 'ldif-wrap=no', '-H', 'ldap:///???'
     o.split("\n\n").collect do |object|
       name = nil
       attributes = {}
@@ -60,6 +60,10 @@ Puppet::Type.type(:openldap).provide(:olc) do
 
       new(:name => name, :ensure => :present, :attributes => attributes)
     end
+  end
+
+  def self.instances
+    self.parse_slapcat('cn=config')
   end
 
   def exists?

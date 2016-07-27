@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe Puppet::Type.type(:openldap) do
+RSpec.shared_examples "openldap" do
 
   it "should have :name as its keyattribute" do
     expect(described_class.key_attributes).to eq([:name])
@@ -48,4 +48,12 @@ describe Puppet::Type.type(:openldap) do
       end
     end
   end
+end
+
+describe Puppet::Type.type(:openldap) do
+  it_behaves_like "openldap"
+end
+
+describe Puppet::Type.type(:openldap_org) do
+  it_behaves_like "openldap"
 end
