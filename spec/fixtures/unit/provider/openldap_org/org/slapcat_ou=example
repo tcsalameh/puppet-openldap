@@ -1,0 +1,11 @@
+dn: ou=example
+ou: example
+objectClass: organizationalUnit
+structuralObjectClass: organizationalUnit
+entryUUID: e4a7c414-e85e-1035-9fcf-67c24c02a483
+creatorsName: gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+createTimestamp: 20160727155950Z
+entryCSN: 20160727155950.143451Z#000000#000#000000
+modifiersName: gidNumber=0+uidNumber=0,cn=peercred,cn=external,cn=auth
+modifyTimestamp: 20160727155950Z
+contextCSN: 20160727155950.143451Z#000000#000#000000

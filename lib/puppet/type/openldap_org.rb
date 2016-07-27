@@ -1,8 +1,8 @@
 require 'set'
 require 'uri'
 
-Puppet::Type.newtype(:openldap) do
-  @doc = 'Manage openldap configuration objects'
+Puppet::Type.newtype(:openldap_org) do
+  @doc = 'Manage openldap organization (i.e. anything other than configuration) objects' # lint:ignore:80chars
 
   ensurable do
     defaultvalues

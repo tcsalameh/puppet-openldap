@@ -127,6 +127,40 @@ describe 'openldap::server' do
           Package['#{samba_package}'] -> ::Openldap::Server::Schema['samba']
         }
       }
+
+      openldap_org { 'dc=example,dc=com':
+        ensure     => present,
+        attributes => {
+          'dc'          => 'example',
+          'o'           => 'example',
+          'objectClass' => ['dcObject', 'organization'],
+        },
+        require => Openldap['olcDatabase={2}hdb,cn=config'],
+      }
+
+      openldap_org { 'ou=people,dc=example,dc=com':
+        ensure     => present,
+        attributes => {
+          'ou'          => 'people',
+          'objectClass' => 'organizationalUnit',
+        },
+        require => [
+            Openldap['olcDatabase={2}hdb,cn=config'],
+            Openldap_org['dc=example,dc=com'],
+          ],
+      }
+
+      openldap_org { 'ou=groups,dc=example,dc=com':
+        ensure      => present,
+        attributes   => {
+          'ou'          => 'groups',
+          'objectClass' => 'organizationalUnit',
+        },
+        require => [
+            Openldap['olcDatabase={2}hdb,cn=config'],
+            Openldap_org['dc=example,dc=com'],
+          ],
+      }
     EOS
 
     apply_manifest(pp, :catch_failures => true)
@@ -167,6 +201,17 @@ describe 'openldap::server' do
         dn: olcDatabase={2}hdb,cn=config
         dn: olcOverlay={0}auditlog,olcDatabase={2}hdb,cn=config
         dn: olcOverlay={1}smbk5pwd,olcDatabase={2}hdb,cn=config
+      EOS
+    end
+  end
+
+  describe command('ldapsearch -Y EXTERNAL -H ldapi:/// -b dc=example,dc=com -z max| grep ^dn') do
+    its(:exit_status) { should eq 0 }
+    its(:stdout) do
+      should eq <<-EOS.gsub(/^ +/, '')
+        dn: dc=example,dc=com
+        dn: ou=groups,dc=example,dc=com
+        dn: ou=people,dc=example,dc=com
       EOS
     end
   end
