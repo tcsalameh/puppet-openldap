@@ -26,6 +26,8 @@ group :development, :test do
   gem 'rspec-puppet-facts', '>= 0.11.0', '< 1.0.0',       :require => false
   gem 'coveralls',                                        :require => false
   gem 'specinfra', '>= 2.42.1',                           :require => false
+  gem 'tins', '= 1.6.0',                                  :require => false
+  gem 'json_pure', '= 1.8.3',                             :require => false
 end
 
 if facterversion = ENV['FACTER_GEM_VERSION']
