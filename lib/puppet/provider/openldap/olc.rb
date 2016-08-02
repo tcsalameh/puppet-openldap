@@ -25,6 +25,7 @@ Puppet::Type.type(:openldap).provide(:olc) do
     'modifiersName',
     'modifyTimestamp',
     'structuralObjectClass',
+    'pwdChangedTime',
   ]
 
   def initialize(value={})
