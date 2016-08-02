@@ -65,6 +65,7 @@ class openldap::server::config {
       'cn'                       => 'config',
       'objectClass'              => 'olcGlobal',
       'olcArgsFile'              => $::openldap::server::args_file,
+      'olcAuthzPolicy'           => $::openldap::server::authz_policy,
       'olcLocalSSF'              => $::openldap::server::local_ssf,
       'olcLogLevel'              => $::openldap::server::log_level,
       'olcPidFile'               => $::openldap::server::pid_file,
@@ -100,6 +101,10 @@ class openldap::server::config {
       true    => 'unique',
       default => undef,
     },
+    $::openldap::server::ppolicy ? {
+      true    => 'ppolicy',
+      default => undef,
+    },
   ])
 
   # Creates a hash based on the enabled overlays pointing to their intended
@@ -119,6 +124,14 @@ class openldap::server::config {
     },
     member($backend_modules, $db_backend) ? {
       true    => "back_${db_backend}",
+      default => undef,
+    },
+    # If chaining is enabled then the ldap backend is required
+    $::openldap::server::chain ? {
+      true    => member($backend_modules, 'ldap') ? {
+        true    => 'back_ldap',
+        default => undef,
+      },
       default => undef,
     },
   ]), $overlays])
@@ -160,6 +173,35 @@ class openldap::server::config {
     }),
   }
 
+  if $::openldap::server::chain {
+    openldap { 'olcOverlay={0}chain,olcDatabase={-1}frontend,cn=config':
+      ensure     => present,
+      attributes => delete_undef_values({
+        'objectClass'         => [
+          'olcOverlayConfig',
+          'olcChainConfig',
+        ],
+        'olcOverlay'          => '{0}chain',
+        'olcChainReturnError' => openldap_boolean($::openldap::server::chain_return_error), # lint:ignore:80chars
+      }),
+      require    => Openldap['cn=module{0},cn=config'],
+    }
+
+    openldap { 'olcDatabase={0}ldap,olcOverlay={0}chain,olcDatabase={-1}frontend,cn=config': # lint:ignore:80chars
+      ensure     => present,
+      attributes => delete_undef_values({
+        'objectClass'       => [
+          'olcLDAPConfig',
+          'olcChainDatabase',
+        ],
+        'olcDatabase'       => '{0}ldap',
+        'olcDbURI'          => $::openldap::server::update_ref,
+        'olcDbRebindAsUser' => openldap_boolean($::openldap::server::chain_rebind_as_user), # lint:ignore:80chars
+        'olcDbIDAssertBind' => $::openldap::server::chain_id_assert_bind,
+      }),
+    }
+  }
+
   openldap { 'olcDatabase={0}config,cn=config':
     ensure     => present,
     attributes => {
@@ -186,8 +228,8 @@ class openldap::server::config {
   # syncprov overlay is required, i.e. this is a master/producer
   if $::openldap::server::syncprov {
 
-    $replica_access   = "to * by dn.exact=\"${replica_dn}\" read"
-    $replica_limits   = "dn.exact=\"${replica_dn}\" time.soft=unlimited time.hard=unlimited size.soft=unlimited size.hard=unlimited" # lint:ignore:80chars
+    $replica_access = "to * by dn.exact=\"${replica_dn}\" read"
+    $replica_limits = "dn.exact=\"${replica_dn}\" time.soft=unlimited time.hard=unlimited size.soft=unlimited size.hard=unlimited" # lint:ignore:80chars
 
     # Prepend replica ACL to any on the main database and also create indices
     # required by the overlay
@@ -304,7 +346,7 @@ class openldap::server::config {
       'olcSuffix'         => $::openldap::server::suffix,
       # slave/consumer
       'olcSyncrepl'       => openldap_values($::openldap::server::syncrepl),
-      'olcUpdateRef'      => openldap_values($::openldap::server::update_ref),
+      'olcUpdateRef'      => $::openldap::server::update_ref,
     }),
     require    => Openldap['cn=module{0},cn=config'],
   }
@@ -396,6 +438,31 @@ class openldap::server::config {
         'olcUniqueURI' => $::openldap::server::unique_uri,
       }),
       require    => Openldap['cn=module{0},cn=config'],
+    }
+  }
+
+  if $::openldap::server::ppolicy {
+    $_ppolicy_hash_cleartext  = openldap_boolean($::openldap::server::ppolicy_hash_cleartext) # lint:ignore:80chars
+    $_ppolicy_use_lockout     = openldap_boolean($::openldap::server::ppolicy_use_lockout) # lint:ignore:80chars
+    $_ppolicy_forward_updates = openldap_boolean($::openldap::server::ppolicy_forward_updates) # lint:ignore:80chars
+
+    openldap { "olcOverlay=${overlay_index['ppolicy']},olcDatabase={${db_index}}${db_backend},cn=config": # lint:ignore:80chars
+      ensure     => present,
+      attributes => delete_undef_values({
+        'objectClass'              => [
+          'olcOverlayConfig',
+          'olcPPolicyConfig',
+        ],
+        'olcOverlay'               => $overlay_index['ppolicy'],
+        'olcPPolicyDefault'        => $::openldap::server::ppolicy_default,
+        'olcPPolicyHashCleartext'  => $_ppolicy_hash_cleartext,
+        'olcPPolicyUseLockout'     => $_ppolicy_use_lockout,
+        'olcPPolicyForwardUpdates' => $_ppolicy_forward_updates,
+      }),
+      require    => [
+        Openldap['cn=module{0},cn=config'],
+        Openldap::Server::Schema['ppolicy'],
+      ],
     }
   }
 }

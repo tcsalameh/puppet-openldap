@@ -24,6 +24,7 @@ Tested with Travis CI
     * [Native Types](#native-types)
         * [Native Type: openldap](#native-type-openldap)
     * [Functions](#functions)
+        * [Function: openldap_boolean](#function-openldap_boolean)
         * [Function: openldap_unique_indices](#function-openldap_unique_indices)
         * [Function: openldap_values](#function-openldap_values)
         * [Function: validate_openldap_unique_uri](#function-validate_openldap_unique_uri)
@@ -244,10 +245,35 @@ Setting this to `true` will enable the `auditlog` overlay.
 
 The LDIF file where the `auditlog` overlay writes any changes.
 
+##### `authz_policy`
+
+Maps to the `olcAuthzPolicy` attribute, accepts one of `none`, `from`, `to`,
+`any`, or `all`.
+
 ##### `backend_modules`
 
 An array of database backends that are built as modules and therefore require
 loading before use.
+
+##### `chain`
+
+Setting this to `true` enables the `chain` overlay which transparently
+forwards writes to a slave/consumer on behalf of the client to the
+master/producer indicated by the configured update referral URI.
+
+##### `chain_id_assert_bind`
+
+Maps to the `olcDbIDAssertBind` attribute on the LDAP database used by the
+chain overlay.
+
+##### `chain_rebind_as_user`
+
+Maps to the `olcDbRebindAsUser` attribute on the LDAP database used by the
+chain overlay.
+
+##### `chain_return_error`
+
+Maps to the `olcChainReturnError` attribute on the chain overlay.
 
 ##### `data_cachesize`
 
@@ -337,6 +363,37 @@ The name of the package to install that provides the LDAP `slapd` daemon.
 ##### `pid_file`
 
 Where `slapd` writes out its PID.
+
+##### `ppolicy`
+
+Setting this to `true` will enable the `ppolicy` overlay on the main database
+allowing the enforcement of password strength/complexity as well as account
+lockout. You will need to load the `ppolicy` schema otherwise attempting to
+enable this will fail.
+
+##### `ppolicy_default`
+
+A Distinguished Name of the default password policy object to use if a user
+does not have a `pwdPolicySubEntry` attribute. This must exist under the
+main suffix.
+
+##### `ppolicy_forward_updates`
+
+If this server is a consumer/slave this setting controls whether password
+policy operational attributes are written locally or forwarded to the
+producer/master, (which means they can come back via replication). This
+requires enabling the `chain` overlay.
+
+##### `ppolicy_hash_cleartext`
+
+Setting this to `true` forces cleartext passwords to be hashed when updated
+via Add or Modify operations. This is not necessary if the Password Modify
+extended operation is normally used.
+
+##### `ppolicy_use_lockout`
+
+Setting this to `true` makes a bind to a locked account return an
+`AccountLocked` error instead of `InvalidCredentials`.
 
 ##### `replica_dn`
 
@@ -454,8 +511,8 @@ function.
 
 ##### `update_ref`
 
-An array of referral URIs to return for referring writes from a read-only
-replica server to the original producer/master server.
+A referral URI to return for referring writes from a read-only replica server
+to the original producer/master server.
 
 ##### `user`
 
@@ -692,6 +749,18 @@ autorequired.
 
 ### Functions
 
+#### Function: `openldap_boolean`
+
+Turn boolean values into `TRUE`/`FALSE` strings as used by certain OpenLDAP
+attributes. `undef` is passed through unchanged to help keep logic
+straightforward.
+
+~~~
+openldap_boolean(undef)
+openldap_boolean(true)
+openldap_boolean(false)
+~~~
+
 #### Function: `openldap_unique_indices`
 
 Canonicalise and unique an array of index directives.
@@ -866,7 +935,7 @@ class { '::openldap::server':
   syncrepl        => [
     'rid=001 provider=ldap://ldap.example.com/ searchbase="dc=example,dc=com" bindmethod=simple binddn="cn=replicator,dc=example,dc=com" credentials=secret logbase="cn=log" logfilter="(&(objectClass=auditWriteObject)(reqResult=0))" schemachecking=on type=refreshAndPersist retry="60 +" syncdata=accesslog',
   ],
-  update_ref      => ['ldap://ldap.example.com/'],
+  update_ref      => 'ldap://ldap.example.com/',
 }
 ::openldap::server::schema { 'cosine':
   position => 1,
@@ -958,6 +1027,8 @@ package { 'samba':
 
 ### Functions
 
+* [`openldap_boolean`](#function-openldap_boolean): Turn boolean values into
+  `TRUE`/`FALSE` strings.
 * [`openldap_unique_indices`](#function-openldap_unique_indices): Canonicalises
   and uniques a set of indices.
 * [`openldap_values`](#function-openldap_values): Adds a positional `{x}`

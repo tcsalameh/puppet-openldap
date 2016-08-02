@@ -15,7 +15,12 @@ class openldap::server (
   $args_file                 = $::openldap::params::args_file,
   $auditlog                  = false,
   $auditlog_file             = $::openldap::params::auditlog_file,
+  $authz_policy              = undef,
   $backend_modules           = $::openldap::params::backend_modules,
+  $chain                     = false,
+  $chain_id_assert_bind      = undef,
+  $chain_rebind_as_user      = undef,
+  $chain_return_error        = undef,
   $data_cachesize            = undef,
   $data_checkpoint           = undef,
   $data_db_config            = [],
@@ -33,6 +38,11 @@ class openldap::server (
   $module_extension          = $::openldap::params::module_extension,
   $package_name              = $::openldap::params::server_package_name,
   $pid_file                  = $::openldap::params::pid_file,
+  $ppolicy                   = false,
+  $ppolicy_default           = undef,
+  $ppolicy_forward_updates   = undef,
+  $ppolicy_hash_cleartext    = undef,
+  $ppolicy_use_lockout       = undef,
   $replica_dn                = undef,
   $schema_dir                = $::openldap::params::schema_dir,
   $security                  = undef,
@@ -83,12 +93,25 @@ class openldap::server (
   if $accesslog_index_cachesize {
     validate_integer($accesslog_index_cachesize)
   }
+  validate_absolute_path($args_file)
   validate_bool($auditlog)
   if $auditlog {
     validate_absolute_path($auditlog_file)
   }
-  validate_absolute_path($args_file)
+  if $authz_policy {
+    validate_re($authz_policy, '^(?:none|from|to|any|all)$')
+  }
   validate_array($backend_modules)
+  if $chain {
+    validate_bool($chain)
+    validate_string($chain_id_assert_bind)
+    if $chain_rebind_as_user {
+      validate_bool($chain_rebind_as_user)
+    }
+    if $chain_return_error {
+      validate_bool($chain_return_error)
+    }
+  }
   if $data_cachesize {
     validate_integer($data_cachesize)
   }
@@ -119,6 +142,21 @@ class openldap::server (
   }
   validate_string($package_name)
   validate_absolute_path($pid_file)
+  if $ppolicy {
+    if $ppolicy_default {
+      validate_string($ppolicy_default)
+      validate_ldap_sub_dn($suffix, $ppolicy_default)
+    }
+    if $ppolicy_forward_updates {
+      validate_bool($ppolicy_forward_updates)
+    }
+    if $ppolicy_hash_cleartext {
+      validate_bool($ppolicy_hash_cleartext)
+    }
+    if $ppolicy_use_lockout {
+      validate_bool($ppolicy_use_lockout)
+    }
+  }
   validate_absolute_path($schema_dir)
   if $security {
     validate_re($security, '^\w+=\d+(?:\s+\w+=\d+)*$')
@@ -173,10 +211,14 @@ class openldap::server (
     validate_openldap_unique_uri($suffix, $unique_uri)
   }
   if $update_ref {
-    validate_array($update_ref)
+    validate_string($update_ref)
     validate_ldap_uri($update_ref)
   }
   validate_string($user)
+
+  if $chain and ! $update_ref {
+    fail('Chaining requires an update referral URL')
+  }
 
   include ::openldap::server::install
   include ::openldap::server::config
