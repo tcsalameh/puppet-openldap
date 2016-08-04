@@ -1062,6 +1062,7 @@ describe 'openldap::server' do
                 :chain_id_assert_bind => 'mode=self flags=proxy-authz-critical',
                 :chain_rebind_as_user => true,
                 :chain_return_error   => true,
+                :chain_tls            => 'start',
                 :syncrepl             => [
                   'rid=001 provider=ldap://ldap.example.com/',
                 ],
@@ -1094,6 +1095,7 @@ describe 'openldap::server' do
               'olcDbURI'          => ['ldap://ldap.example.com/'],
               'olcDbRebindAsUser' => ['TRUE'],
               'olcDbIDAssertBind' => ['mode=self flags=proxy-authz-critical'],
+              'olcDbStartTLS'     => ['start'],
             }
           ) }
           it { should contain_openldap('olcDatabase={2}hdb,cn=config').with_attributes(
