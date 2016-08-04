@@ -442,11 +442,11 @@ passwords expire after a password change.
 
 Maps to the `olcTLSCACertificateFile` attribute.
 
-##### `ssl_cert`
+##### `ssl_certs_dir`
 
 Maps to the `olcTLSCACertificatePath` attribute.
 
-##### `ssl_certs_dir`
+##### `ssl_cert`
 
 Maps to the `olcTLSCertificateFile` attribute.
 
